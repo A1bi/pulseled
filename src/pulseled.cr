@@ -1,6 +1,5 @@
-# TODO: Write documentation for `Pulseled`
-module Pulseled
-  VERSION = "0.1.0"
+require "./apple_midi/server"
 
-  # TODO: Put your code here
-end
+a_midi = AppleMidi::Server.new
+a_midi.listen
+a_midi.close
