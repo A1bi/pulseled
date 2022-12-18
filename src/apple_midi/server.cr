@@ -24,10 +24,15 @@ module AppleMidi
           message = Bytes.new(500)
           loop do
             bytes_read, client_addr = socket.receive(message)
-            puts "<= #{client_addr}"
-            next puts "Unknown packet received. Ignoring." if message[..1] != Bytes[0xff, 0xff]
+            # puts "<= #{client_addr}"
 
-            handle_apple_midi_packet(message, client_addr)
+            if message[..1] == Bytes[0xff, 0xff]
+              handle_apple_midi_packet(message, client_addr)
+            elsif message[1] == 0x61
+              handle_rtp_midi_packet(message)
+            else
+              puts "Unknown packet received. Ignoring."
+            end
           end
         end
       end
@@ -45,6 +50,17 @@ module AppleMidi
         handle_clock_synchronization(message, client_addr)
       when "BY"
         handle_closing(message)
+      end
+    end
+
+    private def handle_rtp_midi_packet(message)
+      return if (session = find_session(message[8..11])).nil?
+
+      case message[13]
+      when 0xfa
+        session.reset_clock
+      when 0xf8
+        puts "QUARTER" if session.pulse_clock
       end
     end
 
