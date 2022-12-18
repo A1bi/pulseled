@@ -25,10 +25,9 @@ module AppleMidi
           loop do
             bytes_read, client_addr = socket.receive(message)
             puts "<= #{client_addr}"
+            next puts "Unknown packet received. Ignoring." if message[..1] != Bytes[0xff, 0xff]
 
-            if message[..1] == Bytes[0xff, 0xff] && message[4..7] == Bytes[0x0, 0x0, 0x0, 0x2]
-              handle_apple_midi_packet(message, client_addr)
-            end
+            handle_apple_midi_packet(message, client_addr)
           end
         end
       end
@@ -42,21 +41,51 @@ module AppleMidi
       case String.new(message[2..3])
       when "IN"
         handle_invitation(message, client_addr)
+      when "CK"
+        handle_clock_synchronization(message, client_addr)
       when "BY"
         handle_closing(message)
       end
     end
 
     private def handle_invitation(message, client_addr)
-      session = @sessions.find { |s| s.initiator_token == message[8..11] }
+      return if message[4..7] != Bytes[0x0, 0x0, 0x0, 0x2]
 
-      if session.nil?
+      if (session = find_session(message[12..15])).nil?
         session = Session.new(message)
         @sessions << session
         puts "#{session.initiator_token.hexstring}: Created MIDI session with peer \"#{session.peer_name}\"."
       end
 
       accept_invitation(session, client_addr)
+    end
+
+    private def handle_clock_synchronization(message, client_addr)
+      return if (session = find_session(message[4..7])).nil?
+
+      count = message[8].to_u8 + 1
+      return if count > 2
+
+      timestamps = Array(Bytes).new(3)
+      3.times do |i|
+        timestamps << message[12 + 8 * i, 8]
+      end
+
+      now = IO::Memory.new
+      now.write_bytes(Time.utc.to_unix_ms, IO::ByteFormat::NetworkEndian)
+      timestamps[count] = now.to_slice
+
+      response = clock_synchronization_packet(session, count, timestamps)
+
+      respond_to_peer(client_addr, response)
+      puts "#{session.initiator_token.hexstring}: Sent clock sync with count = #{count}."
+    end
+
+    private def handle_closing(message)
+      return if (session = find_session(message[12..15])).nil?
+
+      @sessions.delete(session)
+      puts "#{session.initiator_token.hexstring}: Closed MIDI session."
     end
 
     private def accept_invitation(session, client_addr)
@@ -74,12 +103,20 @@ module AppleMidi
       puts "#{session.initiator_token.hexstring}: Accepted invitation."
     end
 
-    private def handle_closing(message)
-      session = @sessions.find { |s| s.peer_ssrc == message[12..15] }
-      return if session.nil?
+    private def clock_synchronization_packet(session, count, timestamps)
+      io = IO::Memory.new
 
-      @sessions.delete(session)
-      puts "#{session.initiator_token.hexstring}: Closed MIDI session."
+      io.write_bytes(0xffff.to_u16)
+      io.write_string("CK".to_slice)
+      io.write(session.ssrc)
+      io.write_byte(count)
+      io.write(Bytes[0, 0, 0])
+
+      timestamps.each do |timestamp|
+        io.write(timestamp)
+      end
+
+      io
     end
 
     private def respond_to_peer(addr, message)
@@ -87,6 +124,10 @@ module AppleMidi
       socket.connect(addr)
       socket.send(message.to_slice)
       puts "=> #{addr}"
+    end
+
+    private def find_session(peer_ssrc)
+      @sessions.find { |s| s.peer_ssrc == peer_ssrc }
     end
   end
 end
