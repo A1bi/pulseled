@@ -4,42 +4,57 @@ require "./session"
 module AppleMidi
   BIND         = "::"
   CONTROL_PORT = 5099
+  MIDI_PORT    = CONTROL_PORT + 1
   PEER_NAME    = "pulseled"
 
   class Server
     def initialize
-      @socket = UDPSocket.new(Socket::Family::INET6)
-      @socket.bind BIND, CONTROL_PORT
+      @control_socket = UDPSocket.new(Socket::Family::INET6)
+      @control_socket.bind BIND, CONTROL_PORT
+
+      @midi_socket = UDPSocket.new(Socket::Family::INET6)
+      @midi_socket.bind BIND, MIDI_PORT
+
       @sessions = [] of Session
     end
 
     def listen
-      message = Bytes.new(500)
-      loop do
-        bytes_read, client_addr = @socket.receive(message)
-        puts "<= #{client_addr}"
-        next if message[..1] != Bytes[0xff, 0xff] || message[4..7] != Bytes[0x0, 0x0, 0x0, 0x2]
+      [@control_socket, @midi_socket].each do |socket|
+        spawn do
+          message = Bytes.new(500)
+          loop do
+            bytes_read, client_addr = socket.receive(message)
+            puts "<= #{client_addr}"
 
-        case String.new(message[2..3])
-        when "IN"
-          handle_invitation(message, client_addr)
-        when "BY"
-          handle_closing(message)
+            if message[..1] == Bytes[0xff, 0xff] && message[4..7] == Bytes[0x0, 0x0, 0x0, 0x2]
+              handle_apple_midi_packet(message, client_addr)
+            end
+          end
         end
       end
     end
 
     def close
-      @socket.close
+      @control_socket.close
+    end
+
+    private def handle_apple_midi_packet(message, client_addr)
+      case String.new(message[2..3])
+      when "IN"
+        handle_invitation(message, client_addr)
+      when "BY"
+        handle_closing(message)
+      end
     end
 
     private def handle_invitation(message, client_addr)
       session = @sessions.find { |s| s.initiator_token == message[8..11] }
-      return unless session.nil?
 
-      session = Session.new(message, client_addr)
-      @sessions << session
-      puts "#{session.initiator_token.hexstring}: Created MIDI session with peer \"#{session.peer_name}\"."
+      if session.nil?
+        session = Session.new(message)
+        @sessions << session
+        puts "#{session.initiator_token.hexstring}: Created MIDI session with peer \"#{session.peer_name}\"."
+      end
 
       accept_invitation(session, client_addr)
     end
@@ -55,18 +70,23 @@ module AppleMidi
       io.write_string(PEER_NAME.to_slice)
       io.write_byte(0)
 
-      session.peer_control_socket.send(io.to_slice)
+      respond_to_peer(client_addr, io)
       puts "#{session.initiator_token.hexstring}: Accepted invitation."
-      puts "=> #{client_addr}"
     end
 
     private def handle_closing(message)
       session = @sessions.find { |s| s.peer_ssrc == message[12..15] }
       return if session.nil?
 
-      session.close
       @sessions.delete(session)
       puts "#{session.initiator_token.hexstring}: Closed MIDI session."
+    end
+
+    private def respond_to_peer(addr, message)
+      socket = UDPSocket.new(Socket::Family::INET6)
+      socket.connect(addr)
+      socket.send(message.to_slice)
+      puts "=> #{addr}"
     end
   end
 end
