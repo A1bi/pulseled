@@ -39,7 +39,7 @@ module AppleMidi
     end
 
     def close
-      @control_socket.close
+      [@control_socket, @midi_socket].each { |s| s.close }
     end
 
     private def handle_apple_midi_packet(message, client_addr)
@@ -62,6 +62,8 @@ module AppleMidi
       when 0xf8
         puts "QUARTER" if session.pulse_clock
       end
+
+      session.last_sequence_number = message[2..3].dup
     end
 
     private def handle_invitation(message, client_addr)
@@ -74,6 +76,7 @@ module AppleMidi
       end
 
       accept_invitation(session, client_addr)
+      transmit_feedback(session, client_addr)
     end
 
     private def handle_clock_synchronization(message, client_addr)
@@ -100,15 +103,13 @@ module AppleMidi
     private def handle_closing(message)
       return if (session = find_session(message[12..15])).nil?
 
+      session.transmit_feedback = false
       @sessions.delete(session)
       puts "#{session.initiator_token.hexstring}: Closed MIDI session."
     end
 
     private def accept_invitation(session, client_addr)
-      io = IO::Memory.new
-
-      io.write_bytes(0xffff.to_u16)
-      io.write_string("OK".to_slice)
+      io = apple_midi_packet("OK")
       io.write_bytes(UInt32.new(2), IO::ByteFormat::NetworkEndian)
       io.write(session.initiator_token)
       io.write(session.ssrc)
@@ -119,11 +120,24 @@ module AppleMidi
       puts "#{session.initiator_token.hexstring}: Accepted invitation."
     end
 
-    private def clock_synchronization_packet(session, count, timestamps)
-      io = IO::Memory.new
+    private def transmit_feedback(session, client_addr)
+      return if session.transmit_feedback
 
-      io.write_bytes(0xffff.to_u16)
-      io.write_string("CK".to_slice)
+      session.transmit_feedback = true
+
+      spawn do
+        loop do
+          sleep 5.seconds
+          break unless session.transmit_feedback
+
+          io = feedback_packet(session)
+          respond_to_peer(client_addr, io)
+        end
+      end
+    end
+
+    private def clock_synchronization_packet(session, count, timestamps)
+      io = apple_midi_packet("CK")
       io.write(session.ssrc)
       io.write_byte(count)
       io.write(Bytes[0, 0, 0])
@@ -132,6 +146,21 @@ module AppleMidi
         io.write(timestamp)
       end
 
+      io
+    end
+
+    private def feedback_packet(session)
+      io = apple_midi_packet("RS")
+      io.write(session.ssrc)
+      io.write(session.last_sequence_number)
+      io.write(Bytes[0, 0])
+      io
+    end
+
+    private def apple_midi_packet(command)
+      io = IO::Memory.new
+      io.write_bytes(0xffff.to_u16)
+      io.write_string(command.to_slice)
       io
     end
 

@@ -2,6 +2,8 @@ module AppleMidi
   class Session
     PULSES_PER_QUARTER = 24
 
+    property last_sequence_number : Bytes
+    property transmit_feedback : Bool
     getter initiator_token : Bytes
     getter peer_ssrc : Bytes
     getter peer_name : String
@@ -13,6 +15,8 @@ module AppleMidi
       @peer_name = String.new(invitation[16..])
       @ssrc = Random.new.random_bytes(4)
       @clock = UInt16.new(0)
+      @last_sequence_number = Bytes[0, 0]
+      @transmit_feedback = false
     end
 
     def pulse_clock
