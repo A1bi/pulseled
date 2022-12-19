@@ -88,7 +88,7 @@ module AppleMidi
       end
 
       now = IO::Memory.new
-      now.write_bytes(Time.utc.to_unix_ms, IO::ByteFormat::NetworkEndian)
+      now.write_bytes(Time.utc.to_unix_ms * 10, IO::ByteFormat::NetworkEndian)
       timestamps[count] = now.to_slice
 
       response = clock_synchronization_packet(session, count, timestamps)
