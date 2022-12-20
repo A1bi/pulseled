@@ -1,13 +1,16 @@
 require "socket"
 require "./session"
+require "./pulse_counter"
 
 module AppleMidi
-  BIND         = "::"
-  CONTROL_PORT = 5099
-  MIDI_PORT    = CONTROL_PORT + 1
-  PEER_NAME    = "pulseled"
-
   class Server
+    BIND         = "::"
+    CONTROL_PORT = 5099
+    MIDI_PORT    = CONTROL_PORT + 1
+    PEER_NAME    = "pulseled"
+
+    getter pulse_counter
+
     def initialize
       @control_socket = UDPSocket.new(Socket::Family::INET6)
       @control_socket.bind BIND, CONTROL_PORT
@@ -16,6 +19,8 @@ module AppleMidi
       @midi_socket.bind BIND, MIDI_PORT
 
       @sessions = [] of Session
+
+      @pulse_counter = PulseCounter.new
     end
 
     def listen
@@ -58,9 +63,9 @@ module AppleMidi
 
       case message[13]
       when 0xfa
-        session.reset_clock
+        @pulse_counter.reset
       when 0xf8
-        puts "QUARTER" if session.pulse_clock
+        @pulse_counter.pulse
       end
 
       session.last_sequence_number = message[2..3].dup
@@ -168,7 +173,7 @@ module AppleMidi
       socket = UDPSocket.new(Socket::Family::INET6)
       socket.connect(addr)
       socket.send(message.to_slice)
-      puts "=> #{addr}"
+      # puts "=> #{addr}"
     end
 
     private def find_session(peer_ssrc)

@@ -1,7 +1,5 @@
 module AppleMidi
   class Session
-    PULSES_PER_QUARTER = 24
-
     property last_sequence_number : Bytes
     property transmit_feedback : Bool
     getter initiator_token : Bytes
@@ -14,22 +12,8 @@ module AppleMidi
       @peer_ssrc = invitation[12..15].dup
       @peer_name = String.new(invitation[16..])
       @ssrc = Random.new.random_bytes(4)
-      @clock = UInt16.new(0)
       @last_sequence_number = Bytes[0, 0]
       @transmit_feedback = false
-    end
-
-    def pulse_clock
-      if (@clock += 1) >= PULSES_PER_QUARTER
-        reset_clock
-      elsif @clock == 1
-        return true
-      end
-      false
-    end
-
-    def reset_clock
-      @clock = 0
     end
   end
 end
