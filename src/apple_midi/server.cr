@@ -44,7 +44,7 @@ module AppleMidi
     end
 
     def close
-      [@control_socket, @midi_socket].each { |s| s.close }
+      [@control_socket, @midi_socket].each(&.close)
     end
 
     private def handle_apple_midi_packet(message, client_addr)
@@ -63,7 +63,7 @@ module AppleMidi
 
       case message[13]
       when 0xfa
-        @pulse_counter.reset
+        @pulse_counter.start
       when 0xf8
         @pulse_counter.pulse
       end

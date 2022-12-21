@@ -4,7 +4,9 @@ a_midi = AppleMidi::Server.new
 a_midi.listen
 
 loop do
-  puts "BEAT #{a_midi.pulse_counter.channel.receive}"
+  beat = a_midi.pulse_counter.channel.receive
+  bpm = a_midi.pulse_counter.bpm
+  puts "BEAT #{beat} | BPM #{bpm}"
 end
 
 a_midi.close
