@@ -1,6 +1,7 @@
 require "socket"
 require "./session"
 require "./pulse_counter"
+require "../logger"
 
 module AppleMidi
   class Server
@@ -29,14 +30,14 @@ module AppleMidi
           message = Bytes.new(500)
           loop do
             bytes_read, client_addr = socket.receive(message)
-            # puts "<= #{client_addr}"
+            Logger.debug "<= #{client_addr}"
 
             if message[..1] == Bytes[0xff, 0xff]
               handle_apple_midi_packet(message, client_addr)
             elsif message[1] == 0x61
               handle_rtp_midi_packet(message)
             else
-              puts "Unknown packet received. Ignoring."
+              Logger.debug "Unknown packet received. Ignoring."
             end
           end
         end
@@ -77,7 +78,7 @@ module AppleMidi
       if (session = find_session(message[12..15])).nil?
         session = Session.new(message)
         @sessions << session
-        puts "#{session.initiator_token.hexstring}: Created MIDI session with peer \"#{session.peer_name}\"."
+        Logger.debug "#{session.initiator_token.hexstring}: Created MIDI session with peer \"#{session.peer_name}\"."
       end
 
       accept_invitation(session, client_addr)
@@ -102,7 +103,7 @@ module AppleMidi
       response = clock_synchronization_packet(session, count, timestamps)
 
       respond_to_peer(client_addr, response)
-      puts "#{session.initiator_token.hexstring}: Sent clock sync with count = #{count}."
+      Logger.debug "#{session.initiator_token.hexstring}: Sent clock sync with count = #{count}."
     end
 
     private def handle_closing(message)
@@ -110,7 +111,7 @@ module AppleMidi
 
       session.transmit_feedback = false
       @sessions.delete(session)
-      puts "#{session.initiator_token.hexstring}: Closed MIDI session."
+      Logger.debug "#{session.initiator_token.hexstring}: Closed MIDI session."
     end
 
     private def accept_invitation(session, client_addr)
@@ -122,7 +123,7 @@ module AppleMidi
       io.write_byte(0)
 
       respond_to_peer(client_addr, io)
-      puts "#{session.initiator_token.hexstring}: Accepted invitation."
+      Logger.debug "#{session.initiator_token.hexstring}: Accepted invitation."
     end
 
     private def transmit_feedback(session, client_addr)
@@ -173,7 +174,7 @@ module AppleMidi
       socket = UDPSocket.new(Socket::Family::INET6)
       socket.connect(addr)
       socket.send(message.to_slice)
-      # puts "=> #{addr}"
+      Logger.debug "=> #{addr}"
     end
 
     private def find_session(peer_ssrc)
