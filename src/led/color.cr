@@ -12,5 +12,13 @@ module Led
 
     def initialize(@red : UInt8, @green : UInt8, @blue : UInt8)
     end
+
+    def *(factor : Float64) : Color
+      Color.new(
+        (@red * factor).to_u8,
+        (@green * factor).to_u8,
+        (@blue * factor).to_u8
+      )
+    end
   end
 end

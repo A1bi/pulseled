@@ -8,9 +8,12 @@ module Effects
 
     def initialize(@led_strips)
       @beat = Float64.new(0)
+      @beat_multiplied = Float64.new(0)
     end
 
     def tick(@beat : Float64)
+      @beat_multiplied = @beat * @beat_multiplier
+
       @led_strips.each.with_index do |strip, i|
         if @sync_strips && i > 0
           strip.copy_from(@led_strips.first)
@@ -23,8 +26,16 @@ module Effects
     private def render_strip(strip : Led::Strip, index : UInt8, beat : Float64)
     end
 
+    private def easing_factor(exponent : UInt8 = 2)
+      (@beat_multiplied % 1) ** exponent
+    end
+
+    private def reverse_easing_factor(exponent : UInt8)
+      1 - easing_factor(exponent)
+    end
+
     private def beat_prescaler(scale : UInt8)
-      @beat // (4 / scale / @beat_multiplier)
+      @beat_multiplied // (4 / scale)
     end
   end
 end

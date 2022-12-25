@@ -11,6 +11,7 @@ module Effects
     property even_gap_sizes : Bool = false
     property changing_gap_sizes = false
     property colors : Array(Led::Color) = [Led::Color.white]
+    property fading : Bool = true
 
     @segment_size : UInt8 = 0
     @gap_size : UInt8 = 0
@@ -25,6 +26,7 @@ module Effects
 
     private def render_strip(strip, i, beat)
       beat = beat_prescaler(4)
+      easing = fading ? reverse_easing_factor(4) : 1.0
       @random = Random.new(beat + i)
 
       segment = (beat % 2).zero?
@@ -34,7 +36,7 @@ module Effects
       change_gap_size if @changing_gap_sizes
 
       strip.size.times do |i|
-        strip.leds[i] = segment ? segment_color : Led::Color.black
+        strip.leds[i] = (segment ? segment_color : Led::Color.black) * easing
 
         segment_i += 1
         if segment && segment_i > @segment_size
