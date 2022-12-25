@@ -14,29 +14,27 @@ module Effects
 
     @segment_size : UInt8 = 0
     @gap_size : UInt8 = 0
-    @initial_gap : Bool = false
 
     def initialize(@led_strips)
       super
 
+      @random = Random.new
       change_segment_size
       change_gap_size
     end
 
-    private def before_render
-      @initial_gap = !@initial_gap
+    private def render_strip(strip, i, beat)
+      beat = beat_prescaler(4)
+      @random = Random.new(beat + i)
+
+      segment = (beat % 2).zero?
+      segment_i = 0
+      segment_color = @colors.sample(@random)
       change_segment_size if @changing_segment_sizes
       change_gap_size if @changing_gap_sizes
-    end
-
-    private def render_strip(strip : Led::Strip)
-      segment = @initial_gap
-      segment_i = 0
-      segment_color = @colors.sample
 
       strip.size.times do |i|
-        color = segment ? segment_color : Led::Color.black
-        strip.leds[i] = color
+        strip.leds[i] = segment ? segment_color : Led::Color.black
 
         segment_i += 1
         if segment && segment_i > @segment_size
@@ -51,11 +49,11 @@ module Effects
     end
 
     private def change_segment_size
-      @segment_size = rand(min_segment_size..max_segment_size)
+      @segment_size = @random.rand(min_segment_size..max_segment_size)
     end
 
     private def change_gap_size
-      @gap_size = rand(min_gap_size..max_gap_size)
+      @gap_size = @random.rand(min_gap_size..max_gap_size)
     end
   end
 end

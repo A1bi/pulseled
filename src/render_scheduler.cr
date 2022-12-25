@@ -43,10 +43,9 @@ class RenderScheduler
     else
       0.0
     end
-    quarter = @last_quarter + subquarter
-    bar_progress = quarter / 4 % 1
+    beat = @last_quarter + subquarter
 
-    @effects.each { |effect| effect.tick(quarter, bar_progress) }
+    @effects.each { |effect| effect.tick(beat) }
     @channel.send(nil)
   end
 

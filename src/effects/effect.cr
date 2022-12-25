@@ -7,31 +7,24 @@ module Effects
     property sync_strips : Bool = false
 
     def initialize(@led_strips)
-      @last_beat = UInt8.new(0)
+      @beat = Float64.new(0)
     end
 
-    def tick(quarter, bar_progress)
-      if (beat = (quarter * beat_multiplier).to_u8) != @last_beat
-        @last_beat = beat
-        return if @led_strips.empty?
-
-        before_render
-
-        if @sync_strips
-          first_strip = @led_strips.first
-          render_strip(first_strip)
-
-          @led_strips[1..].each { |strip| strip.copy_from(first_strip) }
+    def tick(@beat : Float64)
+      @led_strips.each.with_index do |strip, i|
+        if @sync_strips && i > 0
+          strip.copy_from(@led_strips.first)
         else
-          @led_strips.each { |strip| render_strip(strip) }
+          render_strip(strip, i.to_u8, beat)
         end
       end
     end
 
-    private def before_render
+    private def render_strip(strip : Led::Strip, index : UInt8, beat : Float64)
     end
 
-    private def render_strip(strip)
+    private def beat_prescaler(scale : UInt8)
+      @beat // (4 / scale / @beat_multiplier)
     end
   end
 end
