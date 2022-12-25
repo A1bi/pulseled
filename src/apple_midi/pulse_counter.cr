@@ -8,11 +8,11 @@ module AppleMidi
     @last_bpm_update : Time?
 
     getter channel
-    getter bpm : Float64
+    getter bpm : Float64?
 
     def initialize
       @pulses = 0
-      @bpm = 0
+      @bpm = nil
       @channel = Channel(UInt8).new
     end
 
