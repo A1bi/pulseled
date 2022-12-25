@@ -3,8 +3,6 @@ require "../led/color"
 
 module Effects
   class Segments < Effect
-    # property sync_strips : Bool
-    property beat_multiplier : Float64 = 1
     property min_segment_size : UInt8 = 5
     property max_segment_size : UInt8 = 10
     property changing_segment_sizes = false
@@ -21,23 +19,14 @@ module Effects
     def initialize(@led_strips)
       super
 
-      @last_beat = UInt8.new(0)
       change_segment_size
       change_gap_size
     end
 
-    def tick(quarter, bar_progress)
-      if (beat = (quarter * beat_multiplier).to_u8) != @last_beat
-        @last_beat = beat
-        @initial_gap = !@initial_gap
-
-        change_segment_size if @changing_segment_sizes
-        change_gap_size if @changing_gap_sizes
-
-        @led_strips.each do |strip|
-          render_strip(strip)
-        end
-      end
+    private def before_render
+      @initial_gap = !@initial_gap
+      change_segment_size if @changing_segment_sizes
+      change_gap_size if @changing_gap_sizes
     end
 
     private def render_strip(strip : Led::Strip)
@@ -45,7 +34,7 @@ module Effects
       segment_i = 0
       segment_color = @colors.sample
 
-      strip.leds.size.times do |i|
+      strip.size.times do |i|
         color = segment ? segment_color : Led::Color.black
         strip.leds[i] = color
 
