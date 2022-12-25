@@ -29,23 +29,25 @@ module Effects
       easing = fading ? reverse_easing_factor(4) : 1.0
       @random = Random.new(beat + i)
 
-      segment = (beat % 2).zero?
+      segment = false
       segment_i = 0
       segment_color = @colors.sample(@random)
       change_segment_size if @changing_segment_sizes
-      change_gap_size if @changing_gap_sizes
+      @gap_size = @random.rand(0.to_u8..min_gap_size)
+      first_gap = true
 
       strip.size.times do |i|
-        strip.leds[i] = (segment ? segment_color : Led::Color.black) * easing
+        strip.leds[i] = (segment ? segment_color * easing : Led::Color.black)
 
         segment_i += 1
         if segment && segment_i > @segment_size
           segment = false
           segment_i = 0
-          change_gap_size unless even_gap_sizes
         elsif !segment && segment_i > @gap_size
+          change_gap_size if !even_gap_sizes || first_gap
           segment = true
           segment_i = 0
+          first_gap = false
         end
       end
     end
