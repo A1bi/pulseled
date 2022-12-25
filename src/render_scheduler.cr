@@ -1,4 +1,5 @@
 require "./apple_midi/pulse_counter"
+require "./effects/effect"
 
 class RenderScheduler
   FPS               = 30
@@ -9,9 +10,11 @@ class RenderScheduler
   @last_beat : Time? = nil
 
   getter channel
+  property effects : Array(Effects::Effect)
 
   def initialize(@pulse_counter : AppleMidi::PulseCounter, @fallback_bpm : UInt8 = FALLBACK_BPM.to_u8)
-    @channel = Channel(Float64).new
+    @channel = Channel(Nil).new
+    @effects = [] of Effects::Effect
   end
 
   def start
@@ -40,8 +43,11 @@ class RenderScheduler
     else
       0.0
     end
-    progress = (@last_quarter + subquarter) / 4 % 1
-    @channel.send(progress)
+    quarter = @last_quarter + subquarter
+    bar_progress = quarter / 4 % 1
+
+    @effects.each { |effect| effect.tick(quarter, bar_progress) }
+    @channel.send(nil)
   end
 
   private def update_last_beat

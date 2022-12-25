@@ -9,8 +9,12 @@ module Led
     def initialize(@strips : Array(Strip))
     end
 
-    def print(continuing : Bool)
-      OUTPUT.print "\e[A\e[K" * @strips.size if continuing
+    def start
+      OUTPUT.print "\n" * @strips.size
+    end
+
+    def print
+      OUTPUT.print "\e[A\e[K" * @strips.size
 
       @strips.each.with_index do |strip, i|
         OUTPUT.print "#{i + 1}: ["
