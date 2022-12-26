@@ -17,12 +17,17 @@ module Effects
       @random = Random.new(beat)
 
       this_strip = beat % @led_strips.size == i
-      start = @random.rand(0..(strip.size - segment_size))
+      range = segment_range(strip)
 
       strip.size.times do |i|
-        flash = this_strip && i.in?(start..(start + segment_size))
+        flash = this_strip && i.in?(range)
         strip.leds[i] = flash ? color : Led::Color.black
       end
+    end
+
+    private def segment_range(strip)
+      start = @random.rand(0..(strip.size - segment_size))
+      start..(start + segment_size)
     end
   end
 end
