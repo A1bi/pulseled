@@ -25,7 +25,7 @@ module Effects
     end
 
     private def render_strip(strip, i, beat)
-      beat = beat_prescaler(4)
+      beat = beat_prescaler_steps(4)
       easing = fading ? reverse_easing_factor(4) : 1.0
       @random = Random.new(beat + i)
 

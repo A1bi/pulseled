@@ -34,8 +34,12 @@ module Effects
       1 - easing_factor(exponent)
     end
 
-    private def beat_prescaler(scale : UInt8)
-      @beat_multiplied // (4 / scale)
+    private def beat_prescaler(scale : UInt8) : Float64
+      @beat_multiplied / (4 / scale)
+    end
+
+    private def beat_prescaler_steps(scale : UInt8) : UInt16
+      beat_prescaler(scale).to_u16
     end
   end
 end

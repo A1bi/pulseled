@@ -13,7 +13,7 @@ module Effects
     end
 
     private def render_strip(strip, i, beat)
-      beat = beat_prescaler(16)
+      beat = beat_prescaler_steps(16)
       @random = Random.new(beat)
 
       this_strip = beat % @led_strips.size == i
