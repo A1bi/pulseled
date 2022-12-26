@@ -13,26 +13,26 @@ module Effects
 
     private def render_strip(strip, i, beat)
       beat = beat_prescaler(4)
-      random = Random.new(beat)
+      random = Random.new(beat + i)
       color = @colors.sample(random)
 
       total_distance = strip.size * speed
       leading_led = (beat % 1 * total_distance).to_i16
       tail_length = strip.size // tail_length_divisor
 
-      strip.size.times do |i|
-        factor = i > leading_led ? speed : 0
+      strip.size.times do |j|
+        factor = j > leading_led ? speed : 0
         leading_led_multiple = leading_led + total_distance * factor
         tail_start = leading_led_multiple - tail_length
 
-        if i < tail_start
+        if j < tail_start
           progress = 0.0
         else
-          distance_to_leading = leading_led_multiple - i
+          distance_to_leading = leading_led_multiple - j
           progress = 1 - distance_to_leading / tail_length
         end
 
-        strip.leds[i] = color * progress
+        strip.leds[j] = color * progress
       end
     end
   end
