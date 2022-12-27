@@ -20,8 +20,8 @@ module Effects
       range = segment_range(strip)
 
       strip.size.times do |i|
-        flash = this_strip && i.in?(range)
-        strip.leds[i] = flash ? color : Led::Color.black
+        flash = this_strip && i.in?(range) ? 1.0 : 0.0
+        apply_to_led(strip, i, color * flash)
       end
     end
 

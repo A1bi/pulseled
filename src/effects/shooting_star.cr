@@ -26,13 +26,13 @@ module Effects
         tail_start = leading_led_multiple - tail_length
 
         if j < tail_start
-          progress = 0.0
+          alpha = 0.0
         else
           distance_to_leading = leading_led_multiple - j
-          progress = 1 - distance_to_leading / tail_length
+          alpha = 1 - distance_to_leading / tail_length
         end
 
-        strip.leds[j] = color * progress
+        apply_to_led(strip, j, color * alpha)
       end
     end
   end

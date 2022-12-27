@@ -37,7 +37,8 @@ module Effects
       first_gap = true
 
       strip.size.times do |i|
-        strip.leds[i] = (segment ? segment_color * easing : Led::Color.black)
+        alpha = segment ? easing : 0.0
+        apply_to_led(strip, i, segment_color * alpha)
 
         segment_i += 1
         if segment && segment_i > @segment_size

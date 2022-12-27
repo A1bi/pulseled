@@ -5,7 +5,7 @@ module Led
     getter leds : Array(Color)
 
     def initialize(led_count : UInt16)
-      @leds = typeof(@leds).new(led_count, Color.black)
+      @leds = typeof(@leds).new(led_count, Color.clear)
     end
 
     def size
@@ -15,7 +15,7 @@ module Led
     def copy_from(strip : Strip)
       count = [size, strip.size].min
       leds[...count] = strip.leds[...count]
-      leds.fill(Color.black, count + 1, size - count) if count > size
+      leds.fill(Color.clear, count + 1, size - count) if count > size
     end
   end
 end

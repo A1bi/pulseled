@@ -20,7 +20,13 @@ module Led
         OUTPUT.print "#{i + 1}: ["
 
         strip.leds.each do |color|
-          OUTPUT.print LED_CHAR.colorize(color.red, color.green, color.blue)
+          OUTPUT.print(
+            LED_CHAR.colorize(
+              (UInt8::MAX * color.red).to_u8,
+              (UInt8::MAX * color.green).to_u8,
+              (UInt8::MAX * color.blue).to_u8
+            )
+          )
         end
 
         OUTPUT.print "]\n"

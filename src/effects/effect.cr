@@ -1,4 +1,5 @@
 require "../led/strip"
+require "../led/color"
 
 module Effects
   class Effect
@@ -24,6 +25,11 @@ module Effects
     end
 
     private def render_strip(strip : Led::Strip, index : UInt8, beat : Float64)
+    end
+
+    private def apply_to_led(strip : Led::Strip, led_index : Int, color : Led::Color)
+      previous_color = strip.leds[led_index]
+      strip.leds[led_index] = previous_color + color
     end
 
     private def easing_factor(exponent : UInt8 = 2)
