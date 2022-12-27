@@ -20,11 +20,14 @@ effect.colors = [Led::Color.red, Led::Color.green, Led::Color.blue]
 effect.changing_segment_sizes = true
 effect2 = Effects::ShootingStar.new(strips)
 effect2.beat_multiplier = 0.25
+effect2.speed = 3
 effect3 = Effects::PerlinNoise.new(strips)
 effect3.max_brightness = 0.5
+effect3.moving_directions = Effects::PerlinNoise::MovingDirection::Vertical
+effect2.moving_direction = Effects::ShootingStar::MovingDirection::Radial
 
 scheduler = RenderScheduler.new(a_midi.pulse_counter)
-scheduler.effects = [clear, effect3, effect] of Effects::Effect
+scheduler.effects = [clear, effect3, effect, effect2] of Effects::Effect
 
 spawn do
   visualizer.start

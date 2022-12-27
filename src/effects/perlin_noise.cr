@@ -4,7 +4,7 @@ require "../led/color"
 module Effects
   class PerlinNoise < Effect
     @[Flags]
-    enum MovingDirections
+    enum MovingDirection
       Horizontal
       Vertical
     end
@@ -14,7 +14,7 @@ module Effects
     property offset_strips : Bool = true
     property speed : UInt8 = 1
     property step : Float32 = 0.075
-    property moving_directions : MovingDirections = MovingDirections::Horizontal
+    property moving_directions : MovingDirection = MovingDirection::Horizontal
 
     def initialize(@led_strips)
       super
