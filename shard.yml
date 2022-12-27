@@ -11,3 +11,7 @@ targets:
 crystal: 1.6.2
 
 license: MIT
+
+dependencies:
+  perlin_noise:
+    github: redcodefinal/perlin_noise
