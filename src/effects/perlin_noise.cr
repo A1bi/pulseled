@@ -38,7 +38,10 @@ module Effects
         if moving_directions.horizontal?
           x = j + beat
         end
-        noise = @perlin.normalize_noise(x, y, y)
+
+        noise = (@perlin.noise(x, y) + 1) / 2.0
+        noise = 1 - (noise - 1) if noise > 1
+
         alpha = [noise, 0.0].max * max_brightness
         apply_to_led(strip, j, color * alpha)
       end
