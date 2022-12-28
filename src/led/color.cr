@@ -41,5 +41,13 @@ module Led
         other.alpha * other.blue + alpha_inverted * blue
       )
     end
+
+    def to_bridge_bytes : Bytes
+      Bytes[
+        (UInt8::MAX * red).to_u8,
+        (UInt8::MAX * green).to_u8,
+        (UInt8::MAX * blue).to_u8,
+      ]
+    end
   end
 end

@@ -1,5 +1,6 @@
 require "./apple_midi/pulse_counter"
 require "./effects/effect"
+require "./led/strip_set"
 
 class RenderScheduler
   FPS               = 30
@@ -9,12 +10,11 @@ class RenderScheduler
   @last_quarter : UInt8 = 0
   @last_beat : Time? = nil
 
-  getter channel
-  property effects : Array(Effects::Effect)
+  getter channel = Channel(Nil).new
+  property effects = [] of Effects::Effect
+  property led_strip_sets = [] of Led::StripSet
 
   def initialize(@pulse_counter : AppleMidi::PulseCounter, @fallback_bpm : UInt8 = FALLBACK_BPM.to_u8)
-    @channel = Channel(Nil).new
-    @effects = [] of Effects::Effect
   end
 
   def start
@@ -47,6 +47,7 @@ class RenderScheduler
 
     @effects.each { |effect| effect.tick(beat) }
     @channel.send(nil)
+    @led_strip_sets.each(&.send_frame_to_bridge)
   end
 
   private def update_last_beat

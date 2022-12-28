@@ -1,6 +1,7 @@
 require "./apple_midi/server"
 require "./render_scheduler"
 require "./led/strip"
+require "./led/strip_set"
 require "./led/color"
 require "./led/visualizer"
 require "./effects/clear"
@@ -8,11 +9,14 @@ require "./effects/shooting_star"
 require "./effects/segments"
 require "./effects/perlin_noise"
 
+BRIDGE_HOST = "fd00::123"
+
 a_midi = AppleMidi::Server.new
 a_midi.listen
 
 strips = [Led::Strip.new(100), Led::Strip.new(100)]
-visualizer = Led::Visualizer.new(strips)
+strip_set = Led::StripSet.new(strips: strips)
+strip_set.bridge_client = Led::BridgeClient.new(BRIDGE_HOST)
 
 clear = Effects::Clear.new(strips)
 effect = Effects::Segments.new(strips)
@@ -28,6 +32,9 @@ effect2.moving_direction = Effects::ShootingStar::MovingDirection::Radial
 
 scheduler = RenderScheduler.new(a_midi.pulse_counter)
 scheduler.effects = [clear, effect3, effect, effect2] of Effects::Effect
+scheduler.led_strip_sets = [strip_set]
+
+visualizer = Led::Visualizer.new(strips)
 
 spawn do
   visualizer.start
@@ -39,4 +46,5 @@ end
 
 scheduler.start
 
+strip_set.bridge_client.not_nil!.close
 a_midi.close
