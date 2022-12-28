@@ -2,8 +2,14 @@ require "../led/strip"
 require "../led/color"
 
 module Effects
+  enum BlendMode
+    Normal
+    BrightenByAlpha
+  end
+
   class Effect
     getter led_strips : Array(Led::Strip)
+    property blend_mode : BlendMode = BlendMode::Normal
     property beat_multiplier : Float64 = 1
     property sync_strips : Bool = false
 
@@ -29,7 +35,13 @@ module Effects
 
     private def apply_to_led(strip : Led::Strip, led_index : Int, color : Led::Color)
       previous_color = strip.leds[led_index]
-      strip.leds[led_index] = previous_color + color
+      case blend_mode
+      when BlendMode::BrightenByAlpha
+        new_color = previous_color.brighten_by_alpha(color)
+      else
+        new_color = previous_color + color
+      end
+      strip.leds[led_index] = new_color
     end
 
     private def easing_factor(exponent : UInt8 = 2)

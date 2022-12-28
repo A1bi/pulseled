@@ -33,6 +33,15 @@ module Led
       Color.new(red, green, blue, alpha)
     end
 
+    def brighten_by_alpha(other : Color) : Color
+      Color.new(
+        [1.0, red * (other.alpha + 1)].min,
+        [1.0, green * (other.alpha + 1)].min,
+        [1.0, blue * (other.alpha + 1)].min,
+        alpha
+      )
+    end
+
     def +(other : Color) : Color
       alpha_inverted = 1 - other.alpha
       Color.new(
