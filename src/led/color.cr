@@ -33,30 +33,33 @@ module Led
       Color.new(red, green, blue, alpha)
     end
 
-    def brighten_by_alpha(other : Color) : Color
-      Color.new(
-        [1.0, red * (other.alpha + 1)].min,
-        [1.0, green * (other.alpha + 1)].min,
-        [1.0, blue * (other.alpha + 1)].min,
-        alpha
-      )
-    end
-
     def +(other : Color) : Color
       alpha_inverted = 1 - other.alpha
-      Color.new(
-        other.alpha * other.red + alpha_inverted * red,
-        other.alpha * other.green + alpha_inverted * green,
-        other.alpha * other.blue + alpha_inverted * blue
-      )
+      new_color(add_channels)
+    end
+
+    def brighten_by_alpha(other : Color) : Color
+      new_color(brighten_channel_by_alpha, alpha)
     end
 
     def to_bridge_bytes : Bytes
-      Bytes[
-        (UInt8::MAX * red).to_u8,
-        (UInt8::MAX * green).to_u8,
-        (UInt8::MAX * blue).to_u8,
-      ]
+      Bytes[bridge_byte(red), bridge_byte(green), bridge_byte(blue)]
+    end
+
+    macro new_color(method, alpha = nil)
+      Color.new({{method}}(red), {{method}}(green), {{method}}(blue){% if alpha %}, {{ alpha }}{% end %})
+    end
+
+    macro add_channels(channel)
+      other.alpha * other.{{channel}} + alpha_inverted * {{channel}}
+    end
+
+    macro brighten_channel_by_alpha(channel)
+      [1.0, {{channel}} * (other.alpha + 1)].min
+    end
+
+    macro bridge_byte(channel)
+      (UInt8::MAX * {{channel}}).to_u8
     end
   end
 end
