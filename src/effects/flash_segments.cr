@@ -13,21 +13,22 @@ module Effects
     end
 
     private def render_strip(strip, i, beat)
-      beat = beat_prescaler_steps(16)
+      beat = beat_prescaler_steps(64)
       @random = Random.new(beat)
+      return if !sync_strips && @random.rand(@led_strips.size) == i
 
-      this_strip = beat % @led_strips.size == i
       range = segment_range(strip)
+      flash = (beat % 2).zero?
 
-      strip.size.times do |i|
-        flash = this_strip && i.in?(range) ? 1.0 : 0.0
-        apply_to_led(strip, i, color * flash)
+      strip.size.times do |j|
+        alpha = j.in?(range) && flash ? 1.0 : 0.0
+        apply_to_led(strip, j, color * alpha)
       end
     end
 
     private def segment_range(strip)
       start = @random.rand(0..(strip.size - segment_size))
-      start..(start + segment_size)
+      start...(start + segment_size)
     end
   end
 end
